@@ -1,7 +1,7 @@
 import Website from "../models/websites.model.js";
 import User from "../models/user.model.js";
 
-export async function addWebsite(userId, url) {
+export async function addWebsite(userId, url, alertEmail) {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error("User not found");
@@ -15,7 +15,8 @@ export async function addWebsite(userId, url) {
 
   const website = await Website.create({
     userId,
-    url
+    url,
+    alertEmail
   });
 
   return website;

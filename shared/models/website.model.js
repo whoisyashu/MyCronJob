@@ -19,6 +19,14 @@ export function createWebsiteModel(mongoose) {
         default: "UNKNOWN"
       },
 
+      alertEmail: {
+        type: String,
+        required: true,
+        lowercase: true,
+        trim: true,
+        match: [/^\S+@\S+\.\S+$/, "Invalid email address"]
+      },
+
       checkIntervalMinutes: {
         type: Number,
         default: 10

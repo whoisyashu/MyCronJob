@@ -6,13 +6,15 @@ import {
 
 export async function createWebsite(req, res, next) {
   try {
-    const { url } = req.body;
+    const { url, alertEmail } = req.body;
 
-    if (!url) {
-      return res.status(400).json({ message: "Website URL is required" });
+    if (!url || !alertEmail) {
+        return res.status(400).json({
+            message: "Website URL and alert email are required"
+        });
     }
 
-    const website = await addWebsite(req.user.id, url);
+    const website = await addWebsite(req.user.id, url, alertEmail);
     res.status(201).json(website);
   } catch (error) {
     next(error);

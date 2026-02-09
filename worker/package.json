@@ -1,0 +1,18 @@
+{
+  "name": "mycronjob-worker",
+  "type": "module",
+  "scripts": {
+    "start": "node src/worker.js",
+    "dev": "nodemon src/worker.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "mongoose": "^8.0.0",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
