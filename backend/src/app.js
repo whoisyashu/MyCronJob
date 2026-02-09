@@ -3,8 +3,12 @@ import authRoutes from "./routes/auth.routes.js";
 import websiteRoutes from "./routes/website.routes.js";
 import statusRoutes from "./routes/status.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
+import cors from "cors";
 
 const app = express();
+
+app.use(cors());
+
 
 app.use(express.json());
 

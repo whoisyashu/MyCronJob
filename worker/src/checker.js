@@ -1,47 +1,90 @@
 import fetch from "node-fetch";
 import { sendDownAlert, sendRecoveryAlert } from "./mailer.js";
 import { StatusLog, Website } from "./models/index.js";
+import { emitToUser } from "../shared/socketEmitter.js";
 
-export default async function checkWebsite(website) {
-  const startTime = Date.now();
-  let newStatus = "DOWN";
-  let statusCode = null;
+
+async function pingWebsite(url) {
+  const start = Date.now();
 
   try {
-    const response = await fetch(website.url, { timeout: 5000 });
-    statusCode = response.status;
-    newStatus = response.ok ? "UP" : "DOWN";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    return {
+      status: response.ok ? "UP" : "DOWN",
+      statusCode: response.status,
+      responseTimeMs: Date.now() - start
+    };
   } catch (err) {
-    newStatus = "DOWN";
+    return {
+      status: "DOWN",
+      statusCode: null,
+      responseTimeMs: Date.now() - start
+    };
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export default async function checkWebsite(website) {
+  console.log(`➡️ Checking website: ${website.url}`);
+
+  let result = await pingWebsite(website.url);
+
+  if (result.status === "DOWN") {
+    console.log(`🔁 Retry check for ${website.url} in 5s`);
+    await sleep(5000);
+    result = await pingWebsite(website.url);
   }
 
-  const responseTimeMs = Date.now() - startTime;
+  const newStatus = result.status;
+  const prevStatus = website.currentStatus;
 
   await StatusLog.create({
     websiteId: website._id,
     status: newStatus,
-    statusCode,
-    responseTimeMs
+    statusCode: result.statusCode,
+    responseTimeMs: result.responseTimeMs
   });
-
-  const prevStatus = website.currentStatus;
 
   if (prevStatus !== newStatus) {
     website.currentStatus = newStatus;
     website.lastStatusChangeAt = new Date();
 
     if (prevStatus === "UP" && newStatus === "DOWN") {
-        console.log("📨 SENDING DOWN ALERT TO:", website.alertEmail);
         await sendDownAlert(website);
+
+        emitToUser(website.userId, "WEBSITE_DOWN", {
+            websiteId: website._id,
+            url: website.url,
+            time: new Date()
+        });
     }
 
     if (prevStatus === "DOWN" && newStatus === "UP") {
-        console.log("📨 SENDING RECOVERY ALERT TO:", website.alertEmail);
         await sendRecoveryAlert(website);
+
+        emitToUser(website.userId, "WEBSITE_RECOVERED", {
+            websiteId: website._id,
+            url: website.url,
+            time: new Date()
+        });
     }
 
   }
 
   website.lastCheckedAt = new Date();
   await website.save();
+
+  console.log(`✅ Finished check: ${website.url}`);
 }
+
