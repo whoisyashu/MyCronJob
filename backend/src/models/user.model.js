@@ -1,25 +1,4 @@
 import mongoose from "mongoose";
+import { createUserModel } from "../../../shared/models/user.model.js";
 
-const userSchema = new mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true
-    },
-    passwordHash: {
-      type: String,
-      required: true
-    },
-    plan: {
-      type: String,
-      enum: ["FREE", "PRO"],
-      default: "FREE"
-    }
-  },
-  { timestamps: true }
-);
-
-export default mongoose.model("User", userSchema);
+export default createUserModel(mongoose);
