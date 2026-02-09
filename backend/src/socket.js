@@ -18,6 +18,7 @@ export function initSocket(server) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.userId;
 
+      socket.join(socket.userId);
       next();
     } catch (err) {
       next(new Error("Unauthorized"));
@@ -26,12 +27,6 @@ export function initSocket(server) {
 
   io.on("connection", socket => {
     console.log("🔌 WebSocket connected:", socket.userId);
-
-    socket.join(socket.userId); // user-specific room
-
-    socket.on("disconnect", () => {
-      console.log("🔌 WebSocket disconnected:", socket.userId);
-    });
   });
 }
 

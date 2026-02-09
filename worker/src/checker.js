@@ -1,7 +1,8 @@
 import fetch from "node-fetch";
 import { sendDownAlert, sendRecoveryAlert } from "./mailer.js";
 import { StatusLog, Website } from "./models/index.js";
-import { emitToUser } from "../shared/socketEmitter.js";
+import { emitEventToBackend } from "./socketEmitter.js";
+
 
 
 async function pingWebsite(url) {
@@ -63,20 +64,29 @@ export default async function checkWebsite(website) {
     if (prevStatus === "UP" && newStatus === "DOWN") {
         await sendDownAlert(website);
 
-        emitToUser(website.userId, "WEBSITE_DOWN", {
+        await emitEventToBackend({
+          userId: website.userId,
+          event: "WEBSITE_DOWN",
+          payload: {
             websiteId: website._id,
             url: website.url,
             time: new Date()
+          }
         });
+
     }
 
     if (prevStatus === "DOWN" && newStatus === "UP") {
         await sendRecoveryAlert(website);
 
-        emitToUser(website.userId, "WEBSITE_RECOVERED", {
+        await emitEventToBackend({
+          userId: website.userId,
+          event: "WEBSITE_RECOVERED",
+          payload: {
             websiteId: website._id,
             url: website.url,
             time: new Date()
+          }
         });
     }
 
@@ -85,6 +95,5 @@ export default async function checkWebsite(website) {
   website.lastCheckedAt = new Date();
   await website.save();
 
-  console.log(`✅ Finished check: ${website.url}`);
 }
 
